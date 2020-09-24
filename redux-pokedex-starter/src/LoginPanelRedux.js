@@ -27,7 +27,6 @@ class LoginPanelRedux extends Component {
     }
     render() {
         if(this.props.currentUserId) {
-            console.log('user exists')
             return (<Redirect to='/'/>)
         }
         return (

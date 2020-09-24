@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import {thunks} from './store/pokemon';
+import {connect} from 'react-redux';
 
 class PokemonForm extends Component {
   constructor(props) {
@@ -11,8 +13,8 @@ class PokemonForm extends Component {
       type: '',
       move1: '',
       move2: '',
-      types: [],
     };
+
     this.updateAttack = this.updateProperty('attack');
     this.updateDefense = this.updateProperty('defense');
     this.updateImageUrl = this.updateProperty('imageUrl');
@@ -24,32 +26,20 @@ class PokemonForm extends Component {
   }
 
   async componentDidMount() {
-    const response = await fetch(`/api/pokemon/types`);
-    if (response.ok) {
-      const types = await response.json();
-      this.setState({
-        types,
-        type: types[0]
-      });
-    }
+    await this.props.fetchTypes();
+    this.setState({type: this.props.types[0]})
   }
 
-  async handleSubmit(e) {
+  handleSubmit(e) {
     e.preventDefault();
-
     const payload = this.state;
     payload.moves = [payload.move1, payload.move2];
-
-    const response = await fetch(`/api/pokemon`, {
-      method: 'post',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-    if (response.ok) {
-      this.props.handleCreated(await response.json());
+    if(payload.imageUrl === ''){
+      payload.imageUrl = "/images/pokemon_snaps/26.svg"
     }
+    payload.attack = Number.parseInt(payload.attack, 10);
+    payload.defense = Number.parseInt(payload.defense, 10);
+    this.props.newPokemon(payload)
   }
 
   updateProperty = property => e => {
@@ -57,6 +47,7 @@ class PokemonForm extends Component {
       [property]: e.target.value
     });
   }
+
 
   render() {
     return (
@@ -93,7 +84,7 @@ class PokemonForm extends Component {
             value={this.state.move2}
             onChange={this.updateMove2} />
           <select onChange={this.updateType}>
-            {this.state.types.map(type =>
+            {this.props.types.map(type =>
               <option key={type}>{type}</option>
             )}
           </select>
@@ -104,4 +95,17 @@ class PokemonForm extends Component {
   }
 }
 
-export default PokemonForm;
+const mapStateToProps = state => {
+  return {
+    types: state.pokemon.types
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    newPokemon: (payload) => { dispatch(thunks.newPokemon(payload)) },
+    fetchTypes: () => { dispatch(thunks.fetchTypes())},
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(PokemonForm);

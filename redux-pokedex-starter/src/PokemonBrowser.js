@@ -5,6 +5,8 @@ import LogoutButton from './LogoutButton';
 import PokemonDetail from './PokemonDetail';
 import PokemonForm from './PokemonForm';
 import Fab from './Fab';
+import {connect} from 'react-redux';
+import {thunks} from './store/pokemon';
 
 class PokemonBrowser extends Component {
   constructor(props) {
@@ -12,6 +14,7 @@ class PokemonBrowser extends Component {
     this.state = {
       showForm: false,
     };
+    // console.log(props)
   }
 
   handleCreated = (pokemon) => {
@@ -22,16 +25,22 @@ class PokemonBrowser extends Component {
   }
 
   showForm = () => {
-    this.setState({
-      showForm: true,
-    })
+    if (this.state.showForm === true) {
+      this.setState({
+        showForm: false,
+      })
+    } else {
+      this.setState({
+        showForm: true,
+      })
+    }
+  }
+  componentDidMount() {
+    this.props.fetchPokemon();
   }
 
   render() {
     const pokemonId = Number.parseInt(this.props.match.params.pokemonId);
-    if (!this.props.pokemon) {
-      return null;
-    }
     return (
       <main>
         <LogoutButton />
@@ -42,7 +51,7 @@ class PokemonBrowser extends Component {
               <NavLink key={pokemon.name} to={`/pokemon/${pokemon.id}`}>
                 <div className={pokemonId === pokemon.id ? 'nav-entry is-selected' : 'nav-entry'}>
                   <div className="nav-entry-image"
-                       style={{backgroundImage: `url('${pokemon.imageUrl}')`}}>
+                      style={{backgroundImage: `url('${pokemon.imageUrl}')`}}>
                   </div>
                   <div>
                     <div className="primary-text">{pokemon.name}</div>
@@ -63,5 +72,15 @@ class PokemonBrowser extends Component {
     );
   }
 }
+const mapStateToProps = state => {
+  return {
+    pokemon: state.pokemon.list
+  }
+}
 
-export default PokemonBrowser;
+const mapDispatchToProps = dispatch => {
+  return {
+    fetchPokemon: () => {dispatch(thunks.fetchPokemon())}
+  }
+}
+export default connect(mapStateToProps, mapDispatchToProps)(PokemonBrowser);

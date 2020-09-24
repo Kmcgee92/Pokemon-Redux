@@ -1,5 +1,10 @@
+import Cookies from 'js-cookie';
+
+
 //action type
 const SET_USER = 'pokedex/authentication/SET_USER';
+const LOGOUT_USER = 'pokedex/authentication/LOGOUT_USER';
+
 
 //action creator function
 const setUser = (user) => {
@@ -9,12 +14,18 @@ const setUser = (user) => {
 	}
 }
 
-export const actions = {setUser};
+//action creator function 
+const logoutUser = () => {
+	return {
+		type: LOGOUT_USER,
+	}
+}
+
+export const actions = {setUser, logoutUser};
 
 
-//thunk action creator
+//thunk action creator for login
 const login = (email, password) => async dispatch => {
-	//from login panel
 	const response = await fetch(`/api/session`, {
 		method: 'put',
 		headers: { 'Content-Type': 'application/json' },
@@ -25,22 +36,48 @@ const login = (email, password) => async dispatch => {
 		dispatch(setUser(player));
     }
     if(!response.ok){
-        console.log('fetch failed')
+
     }
-	
-	//once we have data we want - dispatch an action
 }
 
-export const thunks = {login};
+//thunk action creator for logout
+const logout = () => async dispatch => {
+	const response = await fetch(`/api/session`, {
+		method: 'delete'
+	});
+	if (response.ok) {
+		dispatch(logoutUser());
+	} else {
+		console.log('logout failed')
+	}
+}
 
+export const thunks = {login, logout};
 
-const authReducer = (state={}, action) => {
-	const nextState = Object.assign({}, state);
+const loadUser = () => {
+	const authToken = Cookies.get("token");
+	if (authToken) {
+		try {
+			const payload = authToken.split(".")[1];
+			const decodedPayload = atob(payload);
+            const payloadObj = JSON.parse(decodedPayload);
+            const { data } = payloadObj;
+			return data; 
+		} catch (e) {
+			Cookies.remove("token");
+		}
+	}
+return {};
+}
+
+const authReducer = (state=loadUser(), action) => {
 	switch(action.type) {
 		case SET_USER:
-			return nextState[action.user.id] = action.user;
+            return action.user
+        case LOGOUT_USER:
+            return {}
 		default:
-			return nextState;
+			return state;
 	}
 }
 

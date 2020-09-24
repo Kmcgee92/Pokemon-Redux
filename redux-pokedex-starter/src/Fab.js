@@ -2,10 +2,15 @@ import React from 'react';
 
 const Fab = props => {
   return (
-    <div className={props.hidden ? 'fab is-hidden' : 'fab'} onClick={props.onClick}>
+    <div className={'fab'} onClick={props.onClick}>
+      {props.hidden ?
+<span aria-label="add" role="img" className="fab-symbol">➖</span> :
       <span aria-label="add" role="img" className="fab-symbol">➕</span>
+      
+    }
     </div>
   );
 }
+
 
 export default Fab;

@@ -1,13 +1,12 @@
 import React, { Component } from 'react';
+import {thunks} from './store/pokemon';
+import {connect} from 'react-redux';
 
 class PokemonDetail extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {};
-  }
 
   async componentDidMount() {
-    await this.loadPokemon();
+    const id = Number.parseInt(this.props.match.params.id);
+    this.props.fetchPokemonDetail(id)
   }
 
   async componentDidUpdate(oldProps) {
@@ -15,23 +14,14 @@ class PokemonDetail extends Component {
     const newId = Number.parseInt(this.props.match.params.id);
     if (oldId === newId) {
       return;
-    }
-    await this.loadPokemon();
-  }
-
-  async loadPokemon() {
-    const id = this.props.match.params.id;
-    const response = await fetch(`/api/pokemon/${id}`);
-    if (response.ok) {
-      this.setState({
-        pokemon: await response.json(),
-      });
-    }
+    } 
+    this.props.fetchPokemonDetail(newId)
   }
 
   render() {
-    const pokemon = this.state.pokemon;
-    if (!pokemon) {
+    const pokemon = this.props.detail;
+
+    if (Object.keys(pokemon).length === 0) {
       return null;
     }
     return (
@@ -91,4 +81,15 @@ class PokemonDetail extends Component {
   }
 }
 
-export default PokemonDetail;
+const mapStateToProps = state => {
+  return {
+    detail: state.pokemon.detail
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    fetchPokemonDetail: (id) => { dispatch(thunks.fetchPokemonDetail(id)) },
+  }
+}
+export default connect(mapStateToProps, mapDispatchToProps)(PokemonDetail);

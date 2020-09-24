@@ -1,103 +1,33 @@
 import React from 'react';
-import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
-import Cookies from 'js-cookie';
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
 
 import LoginPanelRedux from './LoginPanelRedux';
 import PokemonBrowser from './PokemonBrowser';
+import {connect} from 'react-redux';
+import {PrivateRoute} from './PrivateRoute';
 
-const PrivateRoute = ({ component: Component, cProps, ...rest }) => (
-  <Route {...rest} render={(props) => (
-    rest.needLogin === true
-      ? <Redirect to='/login' />
-      : <Component {...props} {...cProps} />
-  )} />
-)
-
-class App extends React.Component {
-  constructor(props) {
-    super(props);
-    const authToken = Cookies.get("token");
-    let currentUserId;
-    if (authToken) {
-      try {
-        const payload = authToken.split(".")[1];
-        const decodedPayload = atob(payload);
-        const payloadObj = JSON.parse(decodedPayload);
-        const { data } = payloadObj;
-        currentUserId = data.id;
-      } catch (e) {
-        Cookies.remove("token");
-      }
-    }
-    this.state = {
-      loaded: false,
-      currentUserId,
-      needLogin: !currentUserId,
-    };
-  }
-
-  async componentDidMount() {
-    this.setState({ loaded: true });
-    this.loadPokemon();
-  }
-
-  handleCreated = (pokemon) => {
-    this.setState({
-      pokemon: [...this.state.pokemon, pokemon]
-    });
-  }
-
-  async loadPokemon() {
-    const response = await fetch(`/api/pokemon`);
-    if (response.ok) {
-      const pokemon = await response.json();
-      this.setState({
-        pokemon,
-        needLogin: false,
-      });
-    } else {
-      this.setState({
-        needLogin: true
-      });
-    }
-  }
-
-  updateUser = currentUserId => {
-    this.setState({
-      needLogin: false,
-      currentUserId
-    });
-    this.loadPokemon();
-  }
-
-  render() {
-    if (!this.state.loaded) {
-      return null;
-    }
-    const cProps = {
-      pokemon: this.state.pokemon,
-      handleCreated: this.handleCreated,
-      currentUserId: this.state.currentUserId
-    };
+const App = (props) => {
     return (
       <BrowserRouter>
         <Switch>
-          <Route path="/login"
-            render={props => <LoginPanelRedux {...props} />} />
+          <Route path="/login" component={LoginPanelRedux} />
           <PrivateRoute path="/"
                         exact={true}
-                        needLogin={this.state.needLogin}
-                        component={PokemonBrowser}
-                        cProps={cProps} />
+                        needLogin={props.needLogin}
+                        component={PokemonBrowser}/>
           <PrivateRoute path="/pokemon/:pokemonId"
                         exact={true}
-                        needLogin={this.state.needLogin}
-                        component={PokemonBrowser}
-                        cProps={cProps} />
+                        needLogin={props.needLogin}
+                        component={PokemonBrowser}/>
         </Switch>
       </BrowserRouter>
     )
   }
+
+const mapStateToProps = state => {
+  return {
+    needLogin: !state.authentication.id
+  }
 }
 
-export default App;
+export default connect(mapStateToProps, null)(App);
